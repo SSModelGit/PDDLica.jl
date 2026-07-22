@@ -1,0 +1,290 @@
+{
+    "format": "pddlica-execution",
+    "steps": [
+        {
+            "kind": "planned_happening",
+            "post_state": {
+                "presence": {
+                    "match-1": true
+                },
+                "interface": {
+                },
+                "time": "0.0",
+                "microstep": 0,
+                "stored": {
+                    "match-1.fuel": 2.220446049250313e-16,
+                    "match-1.mode": "spent"
+                },
+                "boundary_memory": {
+                }
+            },
+            "time": 0,
+            "occurrence_ids": [
+                "occ/0"
+            ],
+            "pre_state": {
+                "presence": {
+                    "match-1": true
+                },
+                "interface": {
+                },
+                "time": "0.0",
+                "microstep": 0,
+                "stored": {
+                    "match-1.fuel": 2.220446049250313e-16,
+                    "match-1.mode": "spent"
+                },
+                "boundary_memory": {
+                }
+            }
+        },
+        {
+            "start_time": 0,
+            "kind": "continuous",
+            "end_time": 1,
+            "state": {
+                "presence": {
+                    "match-1": true
+                },
+                "interface": {
+                },
+                "time": "1.0",
+                "microstep": 0,
+                "stored": {
+                    "match-1.fuel": 2.220446049250313e-16,
+                    "match-1.mode": "spent"
+                },
+                "boundary_memory": {
+                }
+            },
+            "end_reason": "guard"
+        },
+        {
+            "events": [
+                "domain/component/match/event/burn-out"
+            ],
+            "kind": "event_layer",
+            "time": 1,
+            "microstep": 1,
+            "state": {
+                "presence": {
+                    "match-1": true
+                },
+                "interface": {
+                },
+                "time": "1.0",
+                "microstep": 1,
+                "stored": {
+                    "match-1.fuel": 2.220446049250313e-16,
+                    "match-1.mode": "spent"
+                },
+                "boundary_memory": {
+                }
+            }
+        },
+        {
+            "start_time": 1,
+            "kind": "continuous",
+            "end_time": 1.1,
+            "state": {
+                "presence": {
+                    "match-1": true
+                },
+                "interface": {
+                },
+                "time": "1.1",
+                "microstep": 1,
+                "stored": {
+                    "match-1.fuel": 2.220446049250313e-16,
+                    "match-1.mode": "spent"
+                },
+                "boundary_memory": {
+                }
+            },
+            "end_reason": "target"
+        }
+    ],
+    "status": "valid",
+    "diagnostics": [
+    ],
+    "metadata": {
+        "absolute_tolerance": 1.0e-9,
+        "trajectory_uses_solver_steps": false,
+        "model_digest": "sha256:c184fa3b6f3208fb895371130c58479e43ba19ca7550c11b1614fc89b56ed53d",
+        "symbolic_regimes": 0,
+        "event_tolerance": 1.0e-10,
+        "relative_tolerance": 1.0e-9,
+        "trajectory_interval": 0.1
+    },
+    "version": "0.1",
+    "terminal_state": {
+        "presence": {
+            "match-1": true
+        },
+        "interface": {
+        },
+        "time": "1.1",
+        "microstep": 1,
+        "stored": {
+            "match-1.fuel": 2.220446049250313e-16,
+            "match-1.mode": "spent"
+        },
+        "boundary_memory": {
+        }
+    },
+    "trajectories": {
+        "match-1.mode": {
+            "kind": "stored",
+            "phases": [
+                "initial",
+                "action",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "event",
+                "continuous"
+            ],
+            "values": [
+                "unlit",
+                "burning",
+                "burning",
+                "burning",
+                "burning",
+                "burning",
+                "burning",
+                "burning",
+                "burning",
+                "burning",
+                "burning",
+                "burning",
+                "spent",
+                "spent"
+            ],
+            "times": [
+                0,
+                0,
+                0.1,
+                0.2,
+                0.3,
+                0.4,
+                0.5,
+                0.6,
+                0.7,
+                0.8,
+                0.9,
+                1,
+                1,
+                1.1
+            ]
+        },
+        "match-1.fuel": {
+            "kind": "stored",
+            "phases": [
+                "initial",
+                "action",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "event",
+                "continuous"
+            ],
+            "values": [
+                1,
+                1,
+                0.9,
+                0.8,
+                0.7000000000000001,
+                0.6000000000000001,
+                0.5000000000000001,
+                0.40000000000000013,
+                0.3000000000000002,
+                0.20000000000000012,
+                0.10000000000000017,
+                2.220446049250313e-16,
+                2.220446049250313e-16,
+                2.220446049250313e-16
+            ],
+            "times": [
+                0,
+                0,
+                0.1,
+                0.2,
+                0.3,
+                0.4,
+                0.5,
+                0.6,
+                0.7,
+                0.8,
+                0.9,
+                1,
+                1,
+                1.1
+            ]
+        },
+        "@presence/match-1": {
+            "kind": "presence",
+            "phases": [
+                "initial",
+                "action",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "continuous",
+                "event",
+                "continuous"
+            ],
+            "values": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+            ],
+            "times": [
+                0,
+                0,
+                0.1,
+                0.2,
+                0.3,
+                0.4,
+                0.5,
+                0.6,
+                0.7,
+                0.8,
+                0.9,
+                1,
+                1,
+                1.1
+            ]
+        }
+    }
+}

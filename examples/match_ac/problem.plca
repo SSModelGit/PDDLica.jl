@@ -1,0 +1,6 @@
+(define (problem match-ac-demo)
+  (:domain match-ac-adaptation)
+  (:components (source - heat-source :present true) (load - heat-load :present true))
+  (:connections (connect (source port) (load port)))
+  (:init (= (source-temperature source) 100) (= (energy load) 0))
+  (:goal (>= (energy load) 2)))

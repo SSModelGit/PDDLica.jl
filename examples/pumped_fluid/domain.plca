@@ -1,0 +1,44 @@
+(define (domain pumped-fluid)
+  (:requirements :typing :numeric-fluents :components :acausal-connectors :component-presence :events :processes :continuous-effects)
+  (:types tank pump - component)
+
+  (:connector-type fluid-port
+    (:potential pressure - number)
+    (:flow mass-flow - number))
+
+  (:component-type tank
+    (:variables
+      (volume) - number
+      (capacity) - number :static
+      (internal-pressure) - number :static)
+    (:ports
+      (inlet) - fluid-port :presence optional
+      (outlet) - fluid-port :presence optional)
+    (:requirement (and (>= (volume) 0) (<= (volume) (capacity))))
+    (:requirement (= (pressure (inlet)) (internal-pressure)))
+    (:requirement (= (pressure (outlet)) (internal-pressure)))
+    (:processes
+      (:process fluid-balance
+        :parameters ()
+        :precondition true
+        :effect (increase (volume) (* #t (+ (mass-flow (inlet)) (mass-flow (outlet))))))))
+
+  (:component-type pump
+    (:variables
+      (mode) - object
+      (rated-flow) - number :static)
+    (:ports
+      (inlet) - fluid-port :presence required
+      (outlet) - fluid-port :presence optional)
+    (:requirement (= (+ (mass-flow (inlet)) (mass-flow (outlet))) 0))
+    (:requirement (imply (= (mode) off) (= (mass-flow (inlet)) 0)))
+    (:requirement (imply (= (mode) running) (= (mass-flow (inlet)) (rated-flow))))
+    (:methods
+      (:method switch-on
+        :parameters ()
+        :precondition (= (mode) off)
+        :effect (assign (mode) running))
+      (:method switch-off
+        :parameters ()
+        :precondition (= (mode) running)
+        :effect (assign (mode) off)))))

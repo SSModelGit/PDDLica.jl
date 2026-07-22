@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["format", "version", "model_digest", "horizon", "occurrences", "metadata"],
+  "properties": {
+    "format": {"const": "pddlica-plan"}, "version": {"const": "0.1"},
+    "model_digest": {"type": "string"}, "horizon": {"type": "string"},
+    "occurrences": {"type": "array", "items": {"type": "object", "required": ["id", "time", "kind", "schema_id", "name", "arguments"]}},
+    "metadata": {"type": "object"}
+  },
+  "additionalProperties": false
+}

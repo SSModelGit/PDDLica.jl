@@ -1,0 +1,19 @@
+(define (problem pumped-fluid-demo)
+  (:domain pumped-fluid)
+  (:components
+    (source - tank :present true)
+    (transfer - pump :present true)
+    (destination - tank :present true))
+  (:connections
+    (connect (source outlet) (transfer inlet))
+    (connect (transfer outlet) (destination inlet)))
+  (:init
+    (= (volume source) 10)
+    (= (capacity source) 20)
+    (= (internal-pressure source) 1)
+    (= (mode transfer) off)
+    (= (rated-flow transfer) 1)
+    (= (volume destination) 0)
+    (= (capacity destination) 20)
+    (= (internal-pressure destination) 1))
+  (:goal (>= (volume destination) 5)))

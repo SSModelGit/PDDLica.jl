@@ -1,0 +1,11 @@
+(define (domain cushing-adaptation)
+  (:requirements :typing :numeric-fluents :components :processes :continuous-effects)
+  (:types worker - component)
+  (:component-type worker
+    (:variables (mode) - object (progress) - number)
+    (:methods
+      (:method start :parameters () :precondition (= (mode) idle) :effect (assign (mode) active))
+      (:method stop :parameters () :precondition (= (mode) active) :effect (assign (mode) done)))
+    (:processes
+      (:process work :parameters () :precondition (= (mode) active)
+        :effect (increase (progress) (* #t 1))))))

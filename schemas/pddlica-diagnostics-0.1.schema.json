@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["format", "version", "diagnostics"],
+  "properties": {
+    "format": {"const": "pddlica-diagnostics"}, "version": {"const": "0.1"},
+    "diagnostics": {"type": "array", "items": {"type": "object", "required": ["severity", "code", "message"]}}
+  },
+  "additionalProperties": false
+}

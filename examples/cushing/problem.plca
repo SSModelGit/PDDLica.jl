@@ -1,0 +1,6 @@
+(define (problem cushing-overlap)
+  (:domain cushing-adaptation)
+  (:components (left - worker :present true) (right - worker :present true))
+  (:init (= (mode left) idle) (= (progress left) 0)
+         (= (mode right) idle) (= (progress right) 0))
+  (:goal (and (>= (progress left) 2) (>= (progress right) 2))))

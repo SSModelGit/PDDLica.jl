@@ -1,0 +1,13 @@
+(define (domain match-ms-adaptation)
+  (:requirements :typing :numeric-fluents :components :events :processes :continuous-effects)
+  (:types match - component)
+  (:component-type match
+    (:variables (mode) - object (fuel) - number)
+    (:methods
+      (:method ignite :parameters () :precondition (= (mode) unlit) :effect (assign (mode) burning)))
+    (:events
+      (:event burn-out :parameters () :precondition (and (= (mode) burning) (<= (fuel) 0))
+        :effect (assign (mode) spent)))
+    (:processes
+      (:process burn :parameters () :precondition (= (mode) burning)
+        :effect (decrease (fuel) (* #t 1))))))

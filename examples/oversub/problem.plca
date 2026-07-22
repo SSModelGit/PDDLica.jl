@@ -1,0 +1,6 @@
+(define (problem oversub-feasible)
+  (:domain oversub-adaptation)
+  (:components (important - job :present true) (optional - job :present true))
+  (:init (= (mode important) waiting) (= (work important) 0) (= (rate important) 1)
+         (= (mode optional) waiting) (= (work optional) 0) (= (rate optional) 1))
+  (:goal (>= (work important) 3)))

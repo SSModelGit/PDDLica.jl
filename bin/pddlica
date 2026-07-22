@@ -1,0 +1,3 @@
+#!/usr/bin/env julia
+using PDDLica
+exit(PDDLica.run_cli())

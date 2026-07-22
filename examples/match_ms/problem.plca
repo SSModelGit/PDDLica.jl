@@ -1,0 +1,5 @@
+(define (problem match-ms-demo)
+  (:domain match-ms-adaptation)
+  (:components (match-1 - match :present true))
+  (:init (= (mode match-1) unlit) (= (fuel match-1) 1))
+  (:goal (= (mode match-1) spent)))

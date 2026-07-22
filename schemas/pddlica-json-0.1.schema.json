@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pddlica.dev/schema/pddlica-json-0.1.schema.json",
+  "title": "PDDLica surface IR 0.1",
+  "type": "object",
+  "required": ["format", "version", "language", "domain", "problem", "source_map", "metadata"],
+  "properties": {
+    "format": {"const": "pddlica-json"},
+    "version": {"const": "0.1"},
+    "language": {"type": "object", "required": ["name", "version", "host_language", "host_features"]},
+    "domain": {"$ref": "#/$defs/domain"},
+    "problem": {"$ref": "#/$defs/problem"},
+    "source_map": {"type": "object", "required": ["documents", "locations"]},
+    "metadata": {"type": "object", "required": ["producer", "producer_version", "extensions"]}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "domain": {
+      "type": "object",
+      "required": ["id", "name", "requirements", "types", "constants", "predicates", "functions", "derived_predicates", "connector_types", "component_types", "actions", "durative_actions", "events", "processes"]
+    },
+    "problem": {
+      "type": "object",
+      "required": ["id", "name", "domain", "objects", "components", "connections", "init", "goal", "constraints"]
+    }
+  }
+}

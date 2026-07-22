@@ -1,0 +1,15 @@
+(define (domain match-ac-adaptation)
+  (:requirements :typing :numeric-fluents :components :acausal-connectors :processes :continuous-effects)
+  (:types heat-source heat-load - component)
+  (:connector-type heat-port (:potential temperature - number) (:flow heat-flow - number))
+  (:component-type heat-source
+    (:variables (source-temperature) - number :static)
+    (:ports (port) - heat-port :presence required)
+    (:requirement (= (temperature (port)) (source-temperature)))
+    (:requirement (= (heat-flow (port)) -1)))
+  (:component-type heat-load
+    (:variables (energy) - number)
+    (:ports (port) - heat-port :presence required)
+    (:processes
+      (:process absorb :parameters () :precondition true
+        :effect (increase (energy) (* #t (heat-flow (port))))))))

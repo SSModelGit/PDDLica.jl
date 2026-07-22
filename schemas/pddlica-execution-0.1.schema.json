@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["format", "version", "status", "terminal_state", "steps", "diagnostics", "metadata"],
+  "properties": {
+    "format": {"const": "pddlica-execution"}, "version": {"const": "0.1"},
+    "status": {"enum": ["valid", "invalid", "unsupported", "error"]},
+    "terminal_state": {"type": ["object", "null"]}, "steps": {"type": "array"},
+    "trajectories": {"type": "object", "additionalProperties": {
+      "type": "object", "required": ["kind", "times", "values", "phases"]
+    }},
+    "diagnostics": {"type": "array"}, "metadata": {"type": "object"}
+  },
+  "additionalProperties": false
+}

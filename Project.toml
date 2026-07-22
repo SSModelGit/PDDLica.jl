@@ -3,8 +3,29 @@ uuid = "a7fda775-fbb0-4917-bdec-98773a0b9bcb"
 authors = ["Shashank Swaminathan"]
 version = "1.0.0-DEV"
 
+[deps]
+# Compatibility anchors for ModelingToolkit 11.35 on Julia 1.10.
+BipartiteGraphs = "caf10ac8-0290-4205-88aa-f15908547e8d"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Match = "7eb4fadd-790c-5f42-8a69-bfa0b872bfbf"
+ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
+Moshi = "2e0e35c7-a2e4-4343-998d-7ef72827ed2d"
+OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+StructTypes = "856f2bd8-1eba-4b0a-8007-ebc267875bd4"
+UnicodePlots = "b8865327-cd53-5732-bb35-84acbb429228"
+
 [compat]
-julia = "1.10.10"
+# 0.1.9 removed graph APIs still imported by ModelingToolkit 11.35.
+BipartiteGraphs = "=0.1.8"
+# 0.3.11 deprecated singleton syntax still emitted by ModelingToolkitBase/Tearing.
+Moshi = "=0.3.10"
+julia = "1.10"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
