@@ -4,7 +4,35 @@
   "required": ["format", "version", "diagnostics"],
   "properties": {
     "format": {"const": "pddlica-diagnostics"}, "version": {"const": "0.1"},
-    "diagnostics": {"type": "array", "items": {"type": "object", "required": ["severity", "code", "message"]}}
+    "diagnostics": {"type": "array", "items": {"$ref": "#/$defs/diagnostic"}}
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "span": {
+      "type": "object",
+      "required": ["document", "start_byte", "end_byte", "start_line", "start_column", "end_line", "end_column"],
+      "properties": {
+        "document": {"type": "string"},
+        "start_byte": {"type": "integer", "minimum": 0},
+        "end_byte": {"type": "integer", "minimum": 0},
+        "start_line": {"type": "integer", "minimum": 1},
+        "start_column": {"type": "integer", "minimum": 1},
+        "end_line": {"type": "integer", "minimum": 1},
+        "end_column": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "diagnostic": {
+      "type": "object",
+      "required": ["severity", "code", "message", "related", "notes", "data"],
+      "properties": {
+        "severity": {"enum": ["error", "warning", "info"]},
+        "code": {"type": "string"}, "message": {"type": "string"},
+        "location": {"$ref": "#/$defs/span"},
+        "related": {"type": "array"}, "notes": {"type": "array", "items": {"type": "string"}},
+        "data": {"type": "object"}
+      },
+      "additionalProperties": false
+    }
+  }
 }

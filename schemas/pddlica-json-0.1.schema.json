@@ -17,11 +17,40 @@
   "$defs": {
     "domain": {
       "type": "object",
-      "required": ["id", "name", "requirements", "types", "constants", "predicates", "functions", "derived_predicates", "connector_types", "component_types", "actions", "durative_actions", "events", "processes"]
+      "required": ["id", "name", "requirements", "types", "constants", "predicates", "functions", "derived_predicates", "connector_types", "component_types", "actions", "durative_actions", "events", "processes"],
+      "properties": {
+        "id": {"type": "string"}, "name": {"type": "string"},
+        "requirements": {"type": "array", "items": {"type": "string"}},
+        "types": {"type": "array", "items": {"type": "object"}},
+        "constants": {"type": "array", "items": {"type": "object"}},
+        "predicates": {"type": "array", "items": {"type": "object"}},
+        "functions": {"type": "array", "items": {"type": "object"}},
+        "derived_predicates": {"type": "array", "items": {"type": "object"}},
+        "connector_types": {"type": "array", "items": {"type": "object"}},
+        "component_types": {"type": "array", "items": {"type": "object"}},
+        "actions": {"type": "array", "items": {"type": "object"}},
+        "durative_actions": {"type": "array", "items": {"type": "object"}},
+        "events": {"type": "array", "items": {"type": "object"}},
+        "processes": {"type": "array", "items": {"type": "object"}}
+      },
+      "additionalProperties": false
     },
     "problem": {
       "type": "object",
-      "required": ["id", "name", "domain", "objects", "components", "connections", "init", "goal", "constraints"]
+      "required": ["id", "name", "domain", "objects", "components", "connections", "init", "timed_initials", "goal", "constraints", "preferences", "metric"],
+      "properties": {
+        "id": {"type": "string"}, "name": {"type": "string"}, "domain": {"type": "string"},
+        "objects": {"type": "array", "items": {"type": "object"}},
+        "components": {"type": "array", "items": {"type": "object"}},
+        "connections": {"type": "array", "items": {"type": "object"}},
+        "init": {"type": "array", "items": {"type": "object"}},
+        "timed_initials": {"type": "array", "items": {"type": "object"}},
+        "goal": {"type": "object"},
+        "constraints": {"type": "array", "items": {"type": "object"}},
+        "preferences": {"type": "array", "items": {"type": "object"}},
+        "metric": {"type": ["object", "null"]}
+      },
+      "additionalProperties": false
     }
   }
 }

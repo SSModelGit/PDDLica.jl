@@ -83,6 +83,39 @@ end
 
 _id(parts...) = join(lowercase.(string.(parts)), "/")
 _num(s) = occursin(r"^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?(?:/\d+)?$"i, s)
+_span(n::_SNode,document) = Dict{String,Any}("document"=>document,"start_byte"=>n.start,
+    "end_byte"=>n.stop,"start_line"=>n.line,"start_column"=>n.column)
+
+function _source_locations(domain_root,problem_root)
+    out=Dict{String,Any}("domain"=>_span(domain_root,"domain-source"),"problem"=>_span(problem_root,"problem-source"))
+    for sec in domain_root.items[3:end]
+        h=_head(sec); name=length(sec.items)>=2 ? _atom(sec.items[2]) : ""
+        id=h==":connector-type" ? _id("domain","connector",name) : h==":component" ? _id("domain","component",name) :
+            h==":durative-action" ? _id("domain","durative_action",name) : h in (":action",":event",":process") ?
+            _id("domain",h[2:end],name) : ""
+        isempty(id) || (out[id]=_span(sec,"domain-source"))
+        if h==":component"
+            for child in sec.items[3:end]
+                ch=_head(child)
+                if ch in (":methods",":events",":processes")
+                    for b in child.items[2:end]
+                        kind=_head(b)==":method" ? "method" : replace(_head(b),":"=>"")
+                        out[_id("domain","component",name,kind,_atom(b.items[2]))]=_span(b,"domain-source")
+                    end
+                end
+            end
+        end
+    end
+    for (i,sec) in enumerate(problem_root.items[3:end])
+        h=_head(sec)
+        if h==":init"
+            for (j,x) in enumerate(sec.items[2:end]); out[_id("problem","init",j-1)]=_span(x,"problem-source") end
+        elseif h==":connections"
+            for (j,x) in enumerate(sec.items[2:end]); out[_id("problem","connection",j-1)]=_span(x,"problem-source") end
+        end
+    end
+    out
+end
 
 function _typed_parameters(node::_SNode)
     atoms = [_atom(x) for x in node.items]
@@ -150,6 +183,23 @@ function _formula(node::_SNode; ports=Set{String}())
     elseif h in ("forall", "exists")
         Dict{String,Any}("kind" => h, "parameters" => _typed_parameters(args[1]),
             "body" => _formula(args[2]; ports=ports))
+    elseif h == "preference"
+        Dict{String,Any}("kind" => "preference", "name" => length(args)>1 ? _atom(args[1]) : "",
+            "body" => _formula(args[end]; ports=ports))
+    elseif h in ("always", "sometime", "at-most-once", "hold-after")
+        Dict{String,Any}("kind" => replace(h,'-'=>'_'),
+            "time" => h == "hold-after" ? _value(args[1]; ports=ports) : nothing,
+            "body" => _formula(args[end]; ports=ports))
+    elseif h in ("within", "hold-during")
+        Dict{String,Any}("kind" => replace(h,'-'=>'_'),
+            "times" => Any[_value(a; ports=ports) for a in args[1:end-1]],
+            "body" => _formula(args[end]; ports=ports))
+    elseif h in ("sometime-before", "sometime-after")
+        Dict{String,Any}("kind" => replace(h,'-'=>'_'),
+            "first" => _formula(args[1]; ports=ports), "second" => _formula(args[2]; ports=ports))
+    elseif h == "always-within"
+        Dict{String,Any}("kind" => "always_within", "time" => _value(args[1]; ports=ports),
+            "trigger" => _formula(args[2]; ports=ports), "response" => _formula(args[3]; ports=ports))
     else
         Dict{String,Any}("kind" => "atom", "name" => h,
             "arguments" => Any[_value(a; ports=ports) for a in args])
@@ -172,6 +222,12 @@ function _effect(node::_SNode; ports=Set{String}())
         a = args[1]; Dict{String,Any}("kind" => "set_atom",
             "atom" => Dict("name" => _head(a), "arguments" => Any[_value(x; ports=ports) for x in a.items[2:end]]),
             "value" => false)
+    elseif h == "when"
+        Dict{String,Any}("kind" => "when", "condition" => _formula(args[1]; ports=ports),
+            "effect" => _effect(args[2]; ports=ports))
+    elseif h == "forall"
+        Dict{String,Any}("kind" => "forall", "parameters" => _typed_parameters(args[1]),
+            "effect" => _effect(args[2]; ports=ports))
     elseif h in ("assign", "increase", "decrease", "scale-up", "scale-down")
         Dict{String,Any}("kind" => replace(h, '-' => '_'),
             "target" => _target(args[1]; ports=ports), "value" => _value(args[2]; ports=ports))
@@ -182,6 +238,39 @@ function _effect(node::_SNode; ports=Set{String}())
             "atom" => Dict("name" => h, "arguments" => Any[_value(x; ports=ports) for x in args]),
             "value" => true)
     end
+end
+
+function _timed_formula(node::_SNode; ports=Set{String}())
+    h=_head(node)
+    if h == "at" && length(node.items)>=3
+        return Dict{String,Any}("timing"=>_atom(node.items[2]),"formula"=>_formula(node.items[3];ports=ports))
+    elseif h == "over" && length(node.items)>=3 && _atom(node.items[2]) == "all"
+        return Dict{String,Any}("timing"=>"over_all","formula"=>_formula(node.items[3];ports=ports))
+    end
+    Dict{String,Any}("timing"=>"over_all","formula"=>_formula(node;ports=ports))
+end
+
+function _timed_effect(node::_SNode; ports=Set{String}())
+    h=_head(node)
+    if h == "at" && length(node.items)>=3
+        return Dict{String,Any}("timing"=>_atom(node.items[2]),"effect"=>_effect(node.items[3];ports=ports))
+    end
+    effect=_effect(node;ports=ports)
+    Dict{String,Any}("timing"=>"continuous","effect"=>effect)
+end
+
+function _durative(node::_SNode)
+    name=_atom(node.items[2]); fields=_fields(node)
+    params=haskey(fields,":parameters") ? _typed_parameters(fields[":parameters"]) : Any[]
+    duration=get(fields,":duration",_SNode(items=[_SNode(atom="=") ,_SNode(atom="?duration"),_SNode(atom="0")]))
+    dargs=duration.items[2:end]
+    duration_expr=length(dargs)>=2 ? _value(dargs[end]) : _value(duration)
+    cn=get(fields,":condition",_SNode(atom="true")); cis=_head(cn)=="and" ? cn.items[2:end] : [cn]
+    en=get(fields,":effect",_SNode(items=[_SNode(atom="and")])); eis=_head(en)=="and" ? en.items[2:end] : [en]
+    Dict{String,Any}("id"=>_id("domain","durative_action",name),"name"=>name,"parameters"=>params,
+        "duration"=>duration_expr,"duration_constraint"=>_formula(duration),
+        "conditions"=>Any[_timed_formula(x) for x in cis],
+        "effects"=>Any[_timed_effect(x) for x in eis])
 end
 
 function _fields(node::_SNode)
@@ -271,7 +360,8 @@ function _component(node::_SNode)
                 typ = _atom(sec.items[i]); i += 1; static = false
                 if i <= length(sec.items) && _atom(sec.items[i]) == ":static"; static=true; i += 1 end
                 push!(variables, Dict{String,Any}("id" => _id("domain", "component", name, "variable", vname),
-                    "name" => vname, "parameters" => Any[], "value_type" => typ, "static" => static))
+                    "name" => vname, "parameters" => _isatom(decl) ? Any[] :
+                        _typed_parameters(_SNode(items=decl.items[2:end])), "value_type" => typ, "static" => static))
             end
         elseif h == ":requirement"
             push!(requirements, Dict{String,Any}("id" => _id("domain", "component", name,
@@ -289,10 +379,20 @@ function _component(node::_SNode)
                     "id" => _id("domain", "component", name, "subcomponent", vals[1]),
                     "name" => vals[1], "component_type" => vals[dash+1]))
             end
+        elseif h == ":subcomponents"
+            for s in sec.items[2:end]
+                vals = [_atom(x) for x in s.items]; dash=findfirst(==("-"),vals)
+                isnothing(dash) || push!(subs,Dict{String,Any}("id"=>_id("domain","component",name,"subcomponent",vals[1]),
+                    "name"=>vals[1],"component_type"=>vals[dash+1]))
+            end
         elseif h == ":connections"
             for c in sec.items[2:end]
                 push!(connections, _connection(c, name, length(connections)))
             end
+        elseif h == ":ports"
+            nothing
+        elseif !isempty(h)
+            throw(ArgumentError("unsupported or unknown component section '$h'"))
         end
     end
     Dict{String,Any}("id" => _id("domain", "component", name), "name" => name,
@@ -304,7 +404,7 @@ end
 function _port_ref(n::_SNode; anchor="problem")
     vals = [_atom(x) for x in n.items]
     length(vals) >= 2 || return Dict{String,Any}("instance" => Dict("anchor" => anchor, "segments" => Any[]), "port" => "")
-    Dict{String,Any}("instance" => Dict("anchor" => anchor, "segments" => vals[1:end-1]), "port" => vals[end])
+    Dict{String,Any}("instance" => Dict("anchor" => anchor, "segments" => vals[2:end]), "port" => vals[1])
 end
 
 function _connection(n::_SNode, owner=nothing, index=0)
@@ -337,26 +437,45 @@ function _domain(root::_SNode)
             d["requirements"] = Any[_atom(x) for x in sec.items[2:end]]
         elseif h == ":types"
             d["types"] = _types(sec)
+        elseif h == ":constants"
+            for p in _typed_parameters(_SNode(items=sec.items[2:end]))
+                push!(d["constants"],Dict{String,Any}("id"=>_id("domain","constant",p["name"]),
+                    "name"=>p["name"],"type"=>p["type"]))
+            end
         elseif h == ":connector-type"
             push!(d["connector_types"], _connector(sec))
-        elseif h == ":component-type"
+        elseif h == ":component"
             push!(d["component_types"], _component(sec))
         elseif h in (":action", ":event", ":process")
             dest = h == ":action" ? "actions" : h == ":event" ? "events" : "processes"
             push!(d[dest], _behavior(sec, nothing, Set{String}(); kind=h))
+        elseif h == ":durative-action"
+            push!(d["durative_actions"],_durative(sec))
+        elseif h == ":derived"
+            sig=sec.items[2]
+            push!(d["derived_predicates"],Dict{String,Any}("id"=>_id("domain","derived",_head(sig)),
+                "name"=>_head(sig),"parameters"=>_typed_parameters(_SNode(items=sig.items[2:end])),
+                "body"=>_formula(sec.items[3])))
         elseif h == ":predicates"
             for p in sec.items[2:end]
                 push!(d["predicates"], Dict{String,Any}("id" => _id("domain", "predicate", _head(p)),
                     "name" => _head(p), "parameters" => _typed_parameters(_SNode(items=p.items[2:end]))))
             end
         elseif h == ":functions"
-            # Accept the common one-declaration-per-list spelling.
-            for f in sec.items[2:end]
+            i=2
+            while i<=length(sec.items)
+                f=sec.items[i]; i+=1
                 _isatom(f) && continue
+                returns="number"
+                if i+1<=length(sec.items) && _atom(sec.items[i])=="-"
+                    returns=_atom(sec.items[i+1]); i+=2
+                end
                 push!(d["functions"], Dict{String,Any}("id" => _id("domain", "function", _head(f)),
                     "name" => _head(f), "parameters" => _typed_parameters(_SNode(items=f.items[2:end])),
-                    "returns" => "number"))
+                    "returns" => returns))
             end
+        elseif !isempty(h)
+            throw(ArgumentError("unsupported or unknown domain section '$h'"))
         end
     end
     d
@@ -366,6 +485,7 @@ function _problem(root::_SNode)
     _head(root) == "define" || throw(ArgumentError("problem must start with (define ...)"))
     header=root.items[2]; _head(header) == "problem" || throw(ArgumentError("expected problem header"))
     name=_atom(header.items[2]); domain=""; objects=Any[]; components=Any[]; connections=Any[]; init=Any[]
+    timed_init=Any[]; constraints=Any[]; preferences=Any[]; metric=nothing
     goal=Dict{String,Any}("kind" => "boolean", "value" => true)
     for sec in root.items[3:end]
         h=_head(sec)
@@ -388,7 +508,10 @@ function _problem(root::_SNode)
             for c in sec.items[2:end]; push!(connections, _connection(c, nothing, length(connections))) end
         elseif h == ":init"
             for (i, e) in enumerate(sec.items[2:end])
-                if _head(e) == "="
+                if _head(e) == "at" && length(e.items)>=3 && _num(_atom(e.items[2]))
+                    push!(timed_init,Dict{String,Any}("id"=>_id("problem","timed_init",i-1),
+                        "time"=>_atom(e.items[2]),"effect"=>_effect(e.items[3])))
+                elseif _head(e) == "="
                     push!(init, Dict{String,Any}("id" => _id("problem", "init", i-1), "kind" => "equality",
                         "left" => _value(e.items[2]), "right" => _value(e.items[3])))
                 elseif _head(e) == "not"
@@ -402,24 +525,30 @@ function _problem(root::_SNode)
                 end
             end
         elseif h == ":goal"; goal=_formula(sec.items[2])
+        elseif h == ":constraints"
+            cn=sec.items[2]; append!(constraints,_head(cn)=="and" ? Any[_formula(x) for x in cn.items[2:end]] : Any[_formula(cn)])
+        elseif h == ":metric"
+            metric=Dict{String,Any}("optimization"=>_atom(sec.items[2]),"expression"=>_value(sec.items[3]))
+        elseif !isempty(h)
+            throw(ArgumentError("unsupported or unknown problem section '$h'"))
         end
     end
     Dict{String,Any}("id" => "problem", "name" => name, "domain" => domain,
         "objects" => objects, "components" => components, "connections" => connections,
-        "init" => init, "goal" => goal, "constraints" => Any[])
+        "init" => init, "timed_initials"=>timed_init, "goal" => goal,
+        "constraints" => constraints, "preferences"=>preferences, "metric"=>metric)
 end
 
-function _source(source_or_path::AbstractString)
-    isfile(source_or_path) ? read(source_or_path, String) : String(source_or_path)
-end
+_source_path(x::AbstractString) = !occursin('\n',x) && !occursin('(',x) && try isfile(x) catch; false end
+_source(source_or_path::AbstractString) = _source_path(source_or_path) ? read(source_or_path, String) : String(source_or_path)
 
 function parse_model(domain_source::AbstractString, problem_source::AbstractString;
                      logical_domain_name=nothing, logical_problem_name=nothing, parser=:julia)
     parser == :julia || return ParseResult(diagnostics=[Diagnostic(code="PDDLICA-PARSE-900",
         message="this package implements only the native Julia parser")])
     ds=_source(domain_source); ps=_source(problem_source)
-    dn=isnothing(logical_domain_name) ? (isfile(domain_source) ? basename(domain_source) : "domain.plca") : logical_domain_name
-    pn=isnothing(logical_problem_name) ? (isfile(problem_source) ? basename(problem_source) : "problem.plca") : logical_problem_name
+    dn=isnothing(logical_domain_name) ? (_source_path(domain_source) ? basename(domain_source) : "domain.plca") : logical_domain_name
+    pn=isnothing(logical_problem_name) ? (_source_path(problem_source) ? basename(problem_source) : "problem.plca") : logical_problem_name
     dr, dd = _sexprs(ds, "domain-source"); pr, pd = _sexprs(ps, "problem-source")
     diags=vcat(dd,pd)
     (length(dr)==1 && length(pr)==1) || push!(diags, Diagnostic(code="PDDLICA-PARSE-003",
@@ -435,7 +564,7 @@ function parse_model(domain_source::AbstractString, problem_source::AbstractStri
                 "content_digest"=>"sha256:"*bytes2hex(sha256(ds))),
             Dict("id"=>"problem-source","role"=>"problem","logical_name"=>pn,
                 "content_digest"=>"sha256:"*bytes2hex(sha256(ps)))],
-            "locations" => Dict{String,Any}())
+            "locations" => _source_locations(dr[1],pr[1]))
         doc=PDDLicaDocument(language=Dict{String,Any}("name"=>"pddlica","version"=>"0.5",
             "host_language"=>"pddl","host_features"=>Any["pddl2.1","pddl+","pddl3"]),
             domain=domain, problem=problem, source_map=sm)

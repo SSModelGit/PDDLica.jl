@@ -4,9 +4,35 @@
   "required": ["format", "version", "model_digest", "horizon", "occurrences", "metadata"],
   "properties": {
     "format": {"const": "pddlica-plan"}, "version": {"const": "0.1"},
-    "model_digest": {"type": "string"}, "horizon": {"type": "string"},
-    "occurrences": {"type": "array", "items": {"type": "object", "required": ["id", "time", "kind", "schema_id", "name", "arguments"]}},
+    "model_digest": {"type": "string"}, "horizon": {"$ref": "#/$defs/time"},
+    "occurrences": {"type": "array", "items": {"$ref": "#/$defs/occurrence"}},
     "metadata": {"type": "object"}
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "time": {"type": "string", "pattern": "^[+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+)?(?:/[0-9]+)?$"},
+    "argument": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {"enum": ["number", "symbol", "object", "component", "instance"]},
+        "value": {"type": "string"}, "name": {"type": "string"},
+        "path": {}, "anchor": {"type": "string"}, "segments": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "occurrence": {
+      "type": "object",
+      "required": ["id", "time", "kind", "schema_id", "name", "arguments"],
+      "properties": {
+        "id": {"type": "string"}, "time": {"$ref": "#/$defs/time"},
+        "kind": {"enum": ["action", "method", "durative_action"]},
+        "schema_id": {"type": "string"}, "name": {"type": "string"},
+        "owner": {"type": "array", "items": {"type": "string"}},
+        "arguments": {"type": "array", "items": {"$ref": "#/$defs/argument"}},
+        "duration": {"$ref": "#/$defs/time"}
+      },
+      "additionalProperties": false
+    }
+  }
 }

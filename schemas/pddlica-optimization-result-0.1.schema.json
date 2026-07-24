@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["format", "version", "status", "backend", "capability", "plan", "validation", "objective", "diagnostics", "statistics", "metadata"],
+  "properties": {
+    "format": {"const": "pddlica-optimization-result"},
+    "version": {"const": "0.1"},
+    "status": {"enum": ["feasible", "not_found", "unsupported", "time_limit", "resource_limit", "backend_error", "invalid_witness"]},
+    "backend": {"type": "string"},
+    "capability": {
+      "type": "object",
+      "required": ["supported", "backend", "profile", "restrictions", "diagnostics", "details"],
+      "properties": {
+        "supported": {"type": "boolean"}, "backend": {"type": "string"},
+        "profile": {"type": "string"},
+        "restrictions": {"type": "array", "items": {"type": "string"}},
+        "diagnostics": {"type": "array", "items": {"type": "object"}},
+        "details": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "plan": {"type": ["object", "null"]},
+    "validation": {"type": ["object", "null"]},
+    "objective": {"type": ["object", "null"]},
+    "diagnostics": {"type": "array"},
+    "statistics": {"type": "object"},
+    "metadata": {"type": "object"}
+  },
+  "additionalProperties": false
+}

@@ -5,8 +5,8 @@
     (transfer - pump :present true)
     (destination - tank :present true))
   (:connections
-    (connect (source outlet) (transfer inlet))
-    (connect (transfer outlet) (destination inlet)))
+    (connect (outlet source) (inlet transfer))
+    (connect (outlet transfer) (inlet destination)))
   (:init
     (= (volume source) 10)
     (= (capacity source) 20)

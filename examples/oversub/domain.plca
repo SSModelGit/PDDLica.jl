@@ -1,7 +1,6 @@
 (define (domain oversub-adaptation)
   (:requirements :typing :numeric-fluents :components :processes :continuous-effects)
-  (:types job - component)
-  (:component-type job
+  (:component job
     (:variables (mode) - object (work) - number (rate) - number :static)
     (:methods
       (:method admit :parameters () :precondition (= (mode) waiting) :effect (assign (mode) running)))

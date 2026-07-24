@@ -1,0 +1,43 @@
+(define (domain lifecycle-demo)
+  (:requirements :typing :numeric-fluents :components :acausal-connectors
+                 :component-presence)
+
+  (:connector-type signal
+    (:potential value - number)
+    (:flow flow - number))
+
+  (:predicates
+    (removed)
+    (restored))
+
+  (:component anchor
+    (:variables
+      (setpoint) - number :static)
+    (:ports
+      (terminal) - signal :presence optional)
+    (:requirement (= (value (terminal)) (setpoint)))
+    (:requirement (= (flow (terminal)) 0)))
+
+  (:component memory
+    (:variables
+      (stored) - number
+      (setpoint) - number :static)
+    (:ports
+      (terminal) - signal :presence optional)
+    (:requirement (= (value (terminal)) (setpoint)))
+    (:requirement (= (flow (terminal)) 0))
+    (:methods
+      (:method remember
+        :parameters ()
+        :precondition true
+        :effect (assign (stored) 7))))
+
+  (:action remove-memory
+    :parameters ()
+    :precondition (present memory-unit)
+    :effect (and (remove memory-unit) (removed)))
+
+  (:action restore-memory
+    :parameters ()
+    :precondition (and (not (present memory-unit)) (removed))
+    :effect (and (create memory-unit) (restored))))

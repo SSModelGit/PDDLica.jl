@@ -98,6 +98,7 @@ Base.isempty(r::ElaborationResult) = isnothing(r.model)
     presence::Dict{String,Bool} = Dict{String,Bool}()
     boundary::Dict{String,Float64} = Dict{String,Float64}()
     history::Dict{String,Float64} = Dict{String,Float64}()
+    open_duratives::Dict{String,Any} = Dict{String,Any}()
 end
 
 @with_kw struct SimulationOptions
@@ -125,5 +126,65 @@ end
     steps::Vector{Dict{String,Any}} = Dict{String,Any}[]
     trajectories::Dict{String,VariableTrajectory} = Dict{String,VariableTrajectory}()
     diagnostics::Vector{Diagnostic} = Diagnostic[]
+    metadata::Dict{String,Any} = Dict{String,Any}()
+end
+
+abstract type AbstractOptimizerBackend end
+
+@with_kw_noshow struct NativeSearchBackend <: AbstractOptimizerBackend
+    name::String = "native-search"
+end
+
+@with_kw_noshow struct HybridMILPBackend <: AbstractOptimizerBackend
+    name::String = "hybrid-milp-highs"
+end
+
+@with_kw struct OptimizationOptions
+    max_macrosteps::Int = 6
+    max_makespan::Float64 = 10.0
+    time_step::Union{Nothing,Float64} = nothing
+    max_simultaneous_actions::Int = 2
+    max_candidates::Int = 100_000
+    time_limit_seconds::Union{Nothing,Float64} = nothing
+    iterative_deepening::Bool = true
+    candidate_preference::Symbol = :first_feasible
+    validate_candidates::Bool = true
+    random_seed::Int = 0
+    simulation_options::SimulationOptions = SimulationOptions()
+end
+
+@with_kw struct HybridMILPOptions
+    steps::Int = 10
+    makespan::Float64 = 10.0
+    max_simultaneous_actions::Int = 2
+    numeric_bound::Float64 = 10_000.0
+    numeric_bounds::Dict{String,Tuple{Float64,Float64}} =
+        Dict{String,Tuple{Float64,Float64}}()
+    strict_epsilon::Float64 = 1e-7
+    objective::Symbol = :source_metric_or_actions
+    time_limit_seconds::Union{Nothing,Float64} = nothing
+    mip_relative_gap::Union{Nothing,Float64} = nothing
+    silent::Bool = true
+    simulation_options::SimulationOptions = SimulationOptions()
+end
+
+@with_kw_noshow struct CapabilityReport
+    supported::Bool = true
+    backend::String = ""
+    profile::String = "finite-grounded-hybrid-search-0.1"
+    restrictions::Vector{String} = String[]
+    diagnostics::Vector{Diagnostic} = Diagnostic[]
+    details::Dict{String,Any} = Dict{String,Any}()
+end
+
+@with_kw_noshow struct OptimizationResult
+    status::Symbol = :BACKEND_ERROR
+    backend::String = ""
+    capability::CapabilityReport = CapabilityReport()
+    plan::Union{Nothing,PlanDocument} = nothing
+    validation::Union{Nothing,SimulationResult} = nothing
+    objective::Union{Nothing,Dict{String,Any}} = nothing
+    diagnostics::Vector{Diagnostic} = Diagnostic[]
+    statistics::Dict{String,Any} = Dict{String,Any}()
     metadata::Dict{String,Any} = Dict{String,Any}()
 end

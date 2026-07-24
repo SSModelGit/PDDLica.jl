@@ -1,0 +1,38 @@
+{
+  "format": "pddlica-plan",
+  "version": "0.1",
+  "model_digest": "",
+  "horizon": "2",
+  "occurrences": [
+    {
+      "id": "remember",
+      "time": "0",
+      "kind": "method",
+      "schema_id": "domain/component/memory/method/remember",
+      "name": "remember",
+      "owner": ["memory-unit"],
+      "arguments": []
+    },
+    {
+      "id": "remove",
+      "time": "1",
+      "kind": "action",
+      "schema_id": "domain/action/remove-memory",
+      "name": "remove-memory",
+      "arguments": []
+    },
+    {
+      "id": "restore",
+      "time": "2",
+      "kind": "action",
+      "schema_id": "domain/action/restore-memory",
+      "name": "restore-memory",
+      "arguments": []
+    }
+  ],
+  "metadata": {
+    "producer": "example",
+    "producer_version": "0.1.0",
+    "extensions": {}
+  }
+}

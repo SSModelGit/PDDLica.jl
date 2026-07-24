@@ -1,15 +1,38 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "required": ["format", "version", "status", "terminal_state", "steps", "diagnostics", "metadata"],
+  "required": ["format", "version", "status", "plan", "terminal_state", "steps", "trajectories", "diagnostics", "metadata"],
   "properties": {
     "format": {"const": "pddlica-execution"}, "version": {"const": "0.1"},
     "status": {"enum": ["valid", "invalid", "unsupported", "error"]},
-    "terminal_state": {"type": ["object", "null"]}, "steps": {"type": "array"},
+    "plan": {"type": ["object", "null"]},
+    "terminal_state": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/state"}]},
+    "steps": {"type": "array", "items": {"type": "object"}},
     "trajectories": {"type": "object", "additionalProperties": {
-      "type": "object", "required": ["kind", "times", "values", "phases"]
+      "type": "object", "required": ["kind", "times", "values", "phases"],
+      "properties": {
+        "kind": {"enum": ["stored", "interface", "presence"]},
+        "times": {"type": "array", "items": {"type": "string"}},
+        "values": {"type": "array"},
+        "phases": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
     }},
-    "diagnostics": {"type": "array"}, "metadata": {"type": "object"}
+    "diagnostics": {"type": "array", "items": {"type": "object"}},
+    "metadata": {"type": "object"}
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "state": {
+      "type": "object",
+      "required": ["time", "microstep", "stored", "interface", "presence", "boundary_memory", "open_duratives"],
+      "properties": {
+        "time": {"type": "string"}, "microstep": {"type": "integer", "minimum": 0},
+        "stored": {"type": "object"}, "interface": {"type": "object"},
+        "presence": {"type": "object"}, "boundary_memory": {"type": "object"},
+        "open_duratives": {"type": "object"}
+      },
+      "additionalProperties": false
+    }
+  }
 }

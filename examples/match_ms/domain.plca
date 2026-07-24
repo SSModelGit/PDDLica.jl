@@ -1,7 +1,6 @@
 (define (domain match-ms-adaptation)
   (:requirements :typing :numeric-fluents :components :events :processes :continuous-effects)
-  (:types match - component)
-  (:component-type match
+  (:component match
     (:variables (mode) - object (fuel) - number)
     (:methods
       (:method ignite :parameters () :precondition (= (mode) unlit) :effect (assign (mode) burning)))

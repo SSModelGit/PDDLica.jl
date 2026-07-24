@@ -1,12 +1,11 @@
 (define (domain pumped-fluid)
-  (:requirements :typing :numeric-fluents :components :acausal-connectors :component-presence :events :processes :continuous-effects)
-  (:types tank pump - component)
+  (:requirements :typing :numeric-fluents :components :acausal-connectors :processes :continuous-effects)
 
   (:connector-type fluid-port
     (:potential pressure - number)
     (:flow mass-flow - number))
 
-  (:component-type tank
+  (:component tank
     (:variables
       (volume) - number
       (capacity) - number :static
@@ -23,7 +22,7 @@
         :precondition true
         :effect (increase (volume) (* #t (+ (mass-flow (inlet)) (mass-flow (outlet))))))))
 
-  (:component-type pump
+  (:component pump
     (:variables
       (mode) - object
       (rated-flow) - number :static)

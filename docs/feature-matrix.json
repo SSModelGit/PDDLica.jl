@@ -1,0 +1,61 @@
+{
+  "profile": "pddlica-linear-hybrid-0.1",
+  "features": {
+    "surface_component_syntax": "supported_:component_with_inferred_component_type",
+    "pddlica_json": "recursive_runtime_validation_with_versioned_schemas",
+    "strips_actions": "supported",
+    "typing": "supported_finite_universe",
+    "equality_negative_disjunctive_conditions": "supported",
+    "quantified_conditions": "supported_finite_universe",
+    "conditional_and_quantified_effects": "supported",
+    "numeric_and_object_fluents": "supported",
+    "concurrent_happenings": "supported_no_moving_target",
+    "durative_actions": "supported_fixed_supplied_duration",
+    "timed_conditions_and_effects": "supported",
+    "continuous_effects": "supported_affine_rates",
+    "timed_initial_literals": "supported",
+    "pddl_plus_events_and_processes": "supported",
+    "derived_predicates": "supported_finite_universe",
+    "pddl3_trajectory_constraints": "restricted_to_recorded_hybrid_trajectory",
+    "pddl3_preferences": "supported_report_only",
+    "pddl3_metrics": "supported_evaluation_only",
+    "pddlica_components_and_lifecycle": "supported_static_hierarchy_with_declared_and_effective_presence",
+    "pddlica_acausal_connectors": "supported_unique_affine_interfaces",
+    "nonlinear_interface_uniqueness": "unsupported",
+    "component_scoped_durative_methods": "unsupported_language_extension",
+    "hybrid_milp_optimization": "supported_fixed_grid_affine_profile_jump_highs",
+    "milp_autonomous_events": "unsupported",
+    "milp_durative_actions": "unsupported",
+    "bounded_feasible_plan_search": "supported_native_time_grid_fallback",
+    "global_optimality_proofs": "out_of_scope; solver bounds apply to configured unrolling"
+  },
+  "backends": {
+    "simulator": {
+      "profile": "finite linear-hybrid runtime connector elimination",
+      "restrictions": [
+        "affine uniquely solvable connector systems",
+        "connector-dependent requirement branching is unsupported",
+        "trajectory constraints are checked on recorded boundary/sample states",
+        "symbolic or state-dependent durations must be explicit in the plan"
+      ]
+    },
+    "native_search": {
+      "profile": "bounded simulator-driven feasibility search",
+      "restrictions": [
+        "finite grounding and explicit time grid",
+        "first simulator-valid plan rather than metric optimization",
+        "combinatorial simultaneous-happening enumeration"
+      ]
+    },
+    "hybrid_milp": {
+      "profile": "fixed-grid affine JuMP/HiGHS MILP",
+      "restrictions": [
+        "static presence and topology",
+        "instantaneous actions and methods",
+        "no autonomous events, durative actions, timed initial literals, conditional or quantified effects",
+        "no PDDL3 trajectory constraints or preference-dependent metrics",
+        "fixed-step continuous transcription with mandatory simulator replay"
+      ]
+    }
+  }
+}

@@ -1,0 +1,15 @@
+(define (problem lifecycle-problem)
+  (:domain lifecycle-demo)
+  (:components
+    (reference - anchor :present true)
+    (memory-unit - memory :present true))
+  (:connections
+    (connect (terminal reference) (terminal memory-unit)))
+  (:init
+    (= (setpoint reference) 1)
+    (= (stored memory-unit) 0)
+    (= (setpoint memory-unit) 1))
+  (:goal
+    (and (present memory-unit)
+         (restored)
+         (= (stored memory-unit) 7))))
