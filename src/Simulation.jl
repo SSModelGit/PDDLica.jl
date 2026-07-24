@@ -416,7 +416,11 @@ function _effect_operations(effect,state,owner,params,model=nothing)
         push!(ops,key=>(kind,value))
     elseif kind=="set_atom"
         a=effect["atom"]; target=Dict{String,Any}("kind"=>"call","name"=>a["name"],"arguments"=>get(a,"arguments",Any[]))
-        push!(ops,_target_key(target,state,owner,params)=>("assign",Bool(effect["value"])))
+        global_predicate=!isnothing(model) && any(
+            p->string(get(p,"name",""))==string(a["name"]),
+            get(model.document.domain,"predicates",Any[]))
+        target_owner=global_predicate ? "" : owner
+        push!(ops,_target_key(target,state,target_owner,params)=>("assign",Bool(effect["value"])))
     elseif kind in ("create","remove")
         component=_component_path(effect["component"],owner,params)
         push!(ops,"@presence:"*component=>("assign",kind=="create"))

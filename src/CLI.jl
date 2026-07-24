@@ -15,6 +15,8 @@ function _optimization_cli(args)
                 _cli_value(args,"--max-simultaneous";default="2"))),
             numeric_bound=parse(Float64,string(
                 _cli_value(args,"--numeric-bound";default="10000"))),
+            max_event_layers=parse(Int,string(
+                _cli_value(args,"--max-event-layers";default="8"))),
             time_limit_seconds=isnothing(raw_limit) ? nothing :
                 parse(Float64,string(raw_limit)),
             mip_relative_gap=isnothing(raw_gap) ? nothing :

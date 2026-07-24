@@ -164,6 +164,7 @@ end
     objective::Symbol = :source_metric_or_actions
     time_limit_seconds::Union{Nothing,Float64} = nothing
     mip_relative_gap::Union{Nothing,Float64} = nothing
+    max_event_layers::Int = 8
     silent::Bool = true
     simulation_options::SimulationOptions = SimulationOptions()
 end

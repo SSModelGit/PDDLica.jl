@@ -87,12 +87,7 @@ function _duration_values(model,b,arguments,options,initial)
     grid=_search_times(options)
     append!(candidates,[stop-start for start in grid for stop in grid if stop>start])
     options.max_makespan>0 && push!(candidates,options.max_makespan)
-    filter!(d->begin
-        d>0 || return false
-        env=copy(params); env["duration"]=d
-        !haskey(b,"duration_constraint") ||
-            _eval_formula(b["duration_constraint"],initial,"",env;model=model)
-    end,candidates)
+    filter!(>(0),candidates)
     sort!(unique(candidates))
 end
 
@@ -290,9 +285,15 @@ function optimize(model::ElaboratedModel;backend=HybridMILPBackend(),
     throw(ArgumentError("unsupported optimizer backend $(typeof(backend))"))
 end
 
-function optimize(domain_source::AbstractString,problem_source::AbstractString;
+function optimize(domain_path::AbstractString,problem_path::AbstractString;
                   backend=HybridMILPBackend(),options=nothing,kwargs...)
-    parsed=parse_model(domain_source,problem_source)
+    for (role,path) in (("domain",domain_path),("problem",problem_path))
+        isfile(path) || throw(ArgumentError(
+            "$role optimizer input must be a .plca file: '$path'"))
+        lowercase(splitext(path)[2])==".plca" || throw(ArgumentError(
+            "$role optimizer input must use the .plca extension: '$path'"))
+    end
+    parsed=parse_model(domain_path,problem_path)
     isnothing(parsed.document) && return OptimizationResult(status=:BACKEND_ERROR,
         backend=backend.name,diagnostics=parsed.diagnostics)
     checked=elaborate(parsed.document)

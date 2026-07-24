@@ -38,16 +38,19 @@ bounds, and supported transcription—not for every horizon or the unrestricted
 PDDLica problem. `NOT_FOUND` likewise means the configured unrolling is
 infeasible, not that the unrestricted problem is.
 
-The initial MILP profile has static component presence and connection topology,
-instantaneous actions/methods, affine expressions, and fixed-step process
-transitions. Timed initial literals, autonomous events, durative actions,
-conditional/quantified effects, and PDDL3 trajectory constraints are reported
-as `UNSUPPORTED` rather than omitted. The capability report returned with every
-result is the authoritative boundary.
+The MILP profile includes component lifecycle, presence-dependent connection
+regimes, timed initial literals, bounded urgent-event closure, durative
+start/end and continuous effects, conditional/quantified effects, derived
+predicates, optional singleton potential memory, and PDDL3 trajectory
+constraints, preferences, and metrics.
+Autonomous guards and process dynamics are sampled on the configured fixed
+grid. Affine expressions, finite grounding, explicit numeric bounds, and a
+bounded event-closure depth remain required. Every recovered plan is replayed
+with the event-locating simulator, so a grid witness that does not induce the
+same continuous execution is returned as `INVALID_WITNESS`.
 
 The earlier simulator-driven enumerator remains available as a semantic
-fallback for constructs not yet transcribed to MILP, including autonomous
-events and durative actions:
+fallback when fixed-grid MILP transcription is unsuitable:
 
 ```julia
 result = optimize(checked.model;

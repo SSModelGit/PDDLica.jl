@@ -65,6 +65,14 @@ end
     @test synthesized.validation.status==:VALID
     @test any(!isnothing(x.duration) for x in synthesized.plan.occurrences)
     @test synthesized.objective["value"]≈1
+
+    milp=optimize(checked.model;
+        options=HybridMILPOptions(steps=2,makespan=2.0))
+    @test milp.status==:FEASIBLE
+    @test milp.validation.status==:VALID
+    @test milp.validation.terminal_state.values["level"]≈2 atol=1e-6
+    @test milp.validation.metadata["metric_value"]≈1
+    @test Set(x.name for x in milp.plan.occurrences)==Set(["mark-all","raise"])
 end
 
 @testset "Concurrent numeric updates and timed initial effects" begin
@@ -231,7 +239,8 @@ end
       (:action finish :parameters () :precondition (ready) :effect (done)))"""
     problem="""(define (problem two-step-p) (:domain two-step)
       (:init) (:goal (done)))"""
-    result=optimize(domain,problem;backend=NativeSearchBackend(),
+    model=elaborate(parse_model(domain,problem).document).model
+    result=optimize(model;backend=NativeSearchBackend(),
         options=OptimizationOptions(max_macrosteps=2,
         max_makespan=2.0,max_simultaneous_actions=2,max_candidates=100))
     @test result.status==:FEASIBLE
@@ -256,10 +265,29 @@ end
     @test passive.validation.status==:VALID
 
     _,event_model,_=load_example("match_ms")
-    unsupported=optimize(event_model;
+    event_result=optimize(event_model;
         options=HybridMILPOptions(steps=2,makespan=2.0))
-    @test unsupported.status==:UNSUPPORTED
-    @test any(d->occursin("events",d.message),unsupported.diagnostics)
+    @test event_result.status==:FEASIBLE
+    @test event_result.validation.status==:VALID
+    @test only(event_result.plan.occurrences).name=="ignite"
+
+    cascade_domain="""(define (domain event-cascade)
+      (:requirements :strips :events)
+      (:predicates (started) (middle) (done))
+      (:action begin :parameters () :precondition (not (started))
+        :effect (started))
+      (:event first :parameters ()
+        :precondition (and (started) (not (middle))) :effect (middle))
+      (:event second :parameters ()
+        :precondition (and (middle) (not (done))) :effect (done)))"""
+    cascade_problem="""(define (problem event-cascade-p)
+      (:domain event-cascade) (:init) (:goal (done)))"""
+    cascade_model=elaborate(parse_model(cascade_domain,cascade_problem).document).model
+    cascade=optimize(cascade_model;
+        options=HybridMILPOptions(steps=1,makespan=1.0,max_event_layers=3))
+    @test cascade.status==:FEASIBLE
+    @test cascade.validation.status==:VALID
+    @test only(cascade.plan.occurrences).name=="begin"
 
     affine_domain="""(define (domain affine-effect)
       (:requirements :strips :numeric-fluents)
@@ -268,7 +296,8 @@ end
         :effect (assign (level) (* 2 (level)))))"""
     affine_problem="""(define (problem affine-effect-p) (:domain affine-effect)
       (:init (= (level) 1)) (:goal (= (level) 2)))"""
-    affine=optimize(affine_domain,affine_problem;
+    affine_model=elaborate(parse_model(affine_domain,affine_problem).document).model
+    affine=optimize(affine_model;
         options=HybridMILPOptions(steps=1,makespan=1.0))
     @test affine.status==:FEASIBLE
     @test only(affine.plan.occurrences).name=="double"
@@ -282,8 +311,9 @@ end
     til_model=elaborate(parse_model(til_domain,til_problem).document).model
     @test simulate(til_model,PlanDocument(horizon=1.0)).status==:VALID
     til_result=optimize(til_model;options=HybridMILPOptions(steps=1,makespan=1.0))
-    @test til_result.status==:UNSUPPORTED
-    @test any(d->occursin("timed initial",lowercase(d.message)),til_result.diagnostics)
+    @test til_result.status==:FEASIBLE
+    @test til_result.validation.status==:VALID
+    @test til_result.validation.terminal_state.values["x"]≈1
 
     io=IOBuffer()
     write_optimization_result_json(io,result)
@@ -304,6 +334,42 @@ end
            "remove" in get(step,"occurrence_ids",String[]))
     @test !removed["post_state"]["presence"]["memory-unit"]
     @test removed["post_state"]["interface"]["reference.terminal.flow"]≈0
+
+    synthesized=optimize(lifecycle;
+        options=HybridMILPOptions(steps=3,makespan=3.0))
+    @test synthesized.status==:FEASIBLE
+    @test synthesized.validation.status==:VALID
+    @test Set(x.name for x in synthesized.plan.occurrences)==
+        Set(["remove-memory","restore-memory","remember"])
+
+    boundary_domain="""(define (domain boundary-memory)
+      (:requirements :strips :numeric-fluents :components
+                     :acausal-connectors :component-presence)
+      (:predicates (confirmed))
+      (:connector-type pin (:potential v - number) (:flow f - number))
+      (:component source
+        (:ports (p) - pin :presence optional)
+        (:requirement (= (v (p)) 5))
+        (:requirement (= (f (p)) 0)))
+      (:component sink
+        (:ports (p) - pin :presence optional)
+        (:methods (:method confirm :parameters ()
+          :precondition (and (not (present source)) (= (v (p)) 5))
+          :effect (confirmed))))
+      (:action disconnect :parameters () :precondition (present source)
+        :effect (remove source)))"""
+    boundary_problem="""(define (problem boundary-memory-p)
+      (:domain boundary-memory)
+      (:components (source - source) (sink - sink))
+      (:connections (connect (p source) (p sink)))
+      (:init) (:goal (confirmed)))"""
+    boundary=elaborate(parse_model(boundary_domain,boundary_problem).document).model
+    retained=optimize(boundary;
+        options=HybridMILPOptions(steps=2,makespan=2.0))
+    @test retained.status==:FEASIBLE
+    @test retained.validation.status==:VALID
+    @test [(x.time,x.name) for x in retained.plan.occurrences]==
+        [(0.0,"disconnect"),(1.0,"confirm")]
 
     domain="""(define (domain hierarchy)
       (:requirements :components :component-presence :numeric-fluents)
@@ -349,4 +415,48 @@ end
     nonlinear_result=simulate(nonlinear,PlanDocument(horizon=0.0))
     @test nonlinear_result.status==:UNSUPPORTED
     @test any(d->d.code=="PDDLICA-SIM-IFACE-004",nonlinear_result.diagnostics)
+end
+
+@testset "Complex hierarchical optimizer examples" begin
+    configurations=Dict(
+        "coupled_tanks"=>(HybridMILPOptions(steps=4,makespan=4.0),
+            [(0.0,"plant.transfer","open")]),
+        "two_zone_thermal"=>(HybridMILPOptions(steps=2,makespan=2.0),
+            [(0.0,"site.heater-a","turn-on"),(0.0,"site.heater-b","turn-on")]),
+        "satellite"=>(HybridMILPOptions(steps=4,makespan=4.0),
+            [(0.0,"mission.camera","calibrate"),(1.0,"mission.camera","begin-image"),
+             (3.0,"mission.camera","transmit-image")]))
+
+    for name in sort!(collect(keys(configurations)))
+        options,expected=configurations[name]
+        document,model,saved_plan=load_example(name)
+
+        @test any(!isempty(get(ct,"subcomponents",Any[]))
+            for ct in values(model.component_types))
+        @test any(!isempty(get(ct,"connections",Any[]))
+            for ct in values(model.component_types))
+        @test length(model.components)>=4
+        @test !isempty(model.connection_sets)
+        @test any(get(behavior,"_kind","")=="process"
+            for behavior in values(model.behaviors))
+
+        saved=simulate(model,saved_plan)
+        @test saved.status==:VALID
+
+        optimized=optimize(model;options=options)
+        @test optimized.status==:FEASIBLE
+        @test optimized.statistics["termination_status"]=="OPTIMAL"
+        @test optimized.validation.status==:VALID
+        actual=[(occ.time,join(occ.owner,'.'),occ.name)
+            for occ in optimized.plan.occurrences]
+        @test actual==expected
+
+        loaded_model=read_pddlica_json(joinpath(ROOT,"examples",name,
+            "model.pddlica.json"))
+        @test semantic_digest(loaded_model.document)==semantic_digest(document)
+        fixture=read_optimization_result_json(joinpath(ROOT,"examples",name,
+            "optimization.json"))
+        @test fixture.status==:FEASIBLE
+        @test fixture.validation.status==:VALID
+    end
 end

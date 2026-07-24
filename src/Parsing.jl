@@ -403,7 +403,8 @@ end
 
 function _port_ref(n::_SNode; anchor="problem")
     vals = [_atom(x) for x in n.items]
-    length(vals) >= 2 || return Dict{String,Any}("instance" => Dict("anchor" => anchor, "segments" => Any[]), "port" => "")
+    isempty(vals) && return Dict{String,Any}("instance" =>
+        Dict("anchor" => anchor, "segments" => Any[]), "port" => "")
     Dict{String,Any}("instance" => Dict("anchor" => anchor, "segments" => vals[2:end]), "port" => vals[1])
 end
 
