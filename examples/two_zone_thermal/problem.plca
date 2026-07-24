@@ -1,0 +1,17 @@
+(define (problem two-zone-thermal-problem)
+  (:domain two-zone-thermal)
+  (:components
+    (site - building))
+  (:init
+    (= (temperature site.zone-a) 18)
+    (= (capacity site.zone-a) 1)
+    (= (temperature site.zone-b) 18)
+    (= (capacity site.zone-b) 1)
+    (= (mode site.heater-a) off)
+    (= (power site.heater-a) 1)
+    (= (mode site.heater-b) off)
+    (= (power site.heater-b) 1)
+    (= (conductance site.partition) 0.25))
+  (:goal
+    (and (>= (temperature site.zone-a) 20)
+         (>= (temperature site.zone-b) 20))))

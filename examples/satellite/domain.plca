@@ -1,0 +1,68 @@
+(define (domain satellite-hybrid)
+  (:requirements :typing :numeric-fluents :components :component-hierarchy
+                 :acausal-connectors :processes :continuous-effects)
+
+  (:predicates
+    (image-transmitted))
+
+  (:connector-type power-port
+    (:potential voltage - number)
+    (:flow power-flow - number))
+
+  (:component battery
+    (:variables
+      (energy) - number
+      (bus-voltage) - number :static)
+    (:ports
+      (terminal) - power-port :presence required)
+    (:requirement (= (voltage (terminal)) (bus-voltage)))
+    (:requirement (>= (energy) 0))
+    (:processes
+      (:process store-energy
+        :parameters ()
+        :precondition true
+        :effect (increase (energy) (* #t (power-flow (terminal)))))))
+
+  (:component camera
+    (:variables
+      (mode) - object
+      (draw) - number :static
+      (image-progress) - number)
+    (:ports
+      (power) - power-port :presence required)
+    (:requirement (imply (= (mode) stowed) (= (power-flow (power)) 0)))
+    (:requirement (imply (= (mode) calibrated) (= (power-flow (power)) 0)))
+    (:requirement (imply (= (mode) imaging) (= (power-flow (power)) (draw))))
+    (:methods
+      (:method calibrate
+        :parameters ()
+        :precondition (= (mode) stowed)
+        :effect (assign (mode) calibrated))
+      (:method begin-image
+        :parameters ()
+        :precondition (= (mode) calibrated)
+        :effect (assign (mode) imaging))
+      (:method transmit-image
+        :parameters ()
+        :precondition (and (= (mode) imaging) (>= (image-progress) 2))
+        :effect (and (assign (mode) stowed) (image-transmitted))))
+    (:processes
+      (:process expose-image
+        :parameters ()
+        :precondition (= (mode) imaging)
+        :effect (increase (image-progress) (* #t 1)))))
+
+  (:component radio
+    (:variables
+      (standby-draw) - number :static)
+    (:ports
+      (power) - power-port :presence required)
+    (:requirement (= (power-flow (power)) (standby-draw))))
+
+  (:component spacecraft
+    (:components
+      (battery - battery)
+      (camera - camera)
+      (radio - radio))
+    (:connections
+      (connect (terminal battery) (power camera) (power radio)))))

@@ -1,0 +1,50 @@
+(define (domain coupled-tanks)
+  (:requirements :typing :numeric-fluents :components :component-hierarchy
+                 :acausal-connectors :processes :continuous-effects)
+
+  (:connector-type fluid
+    (:potential pressure - number)
+    (:flow mass-flow - number))
+
+  (:component tank
+    (:variables
+      (volume) - number
+      (pressure) - number :static)
+    (:ports
+      (terminal) - fluid :presence required)
+    (:requirement (= (pressure (terminal)) (pressure)))
+    (:requirement (>= (volume) 0))
+    (:processes
+      (:process inventory
+        :parameters ()
+        :precondition true
+        :effect (increase (volume) (* #t (mass-flow (terminal)))))))
+
+  (:component valve
+    (:variables
+      (mode) - object
+      (rated-flow) - number :static)
+    (:ports
+      (inlet) - fluid :presence required
+      (outlet) - fluid :presence required)
+    (:requirement (= (+ (mass-flow (inlet)) (mass-flow (outlet))) 0))
+    (:requirement (imply (= (mode) closed) (= (mass-flow (inlet)) 0)))
+    (:requirement (imply (= (mode) open) (= (mass-flow (inlet)) (rated-flow))))
+    (:methods
+      (:method open
+        :parameters ()
+        :precondition (= (mode) closed)
+        :effect (assign (mode) open))
+      (:method close
+        :parameters ()
+        :precondition (= (mode) open)
+        :effect (assign (mode) closed))))
+
+  (:component two-tank-plant
+    (:components
+      (supply - tank)
+      (transfer - valve)
+      (receiver - tank))
+    (:connections
+      (connect (terminal supply) (inlet transfer))
+      (connect (outlet transfer) (terminal receiver)))))

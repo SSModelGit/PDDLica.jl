@@ -1,0 +1,14 @@
+(define (problem satellite-hybrid-problem)
+  (:domain satellite-hybrid)
+  (:components
+    (mission - spacecraft))
+  (:init
+    (= (energy mission.battery) 10)
+    (= (bus-voltage mission.battery) 28)
+    (= (mode mission.camera) stowed)
+    (= (draw mission.camera) 1)
+    (= (image-progress mission.camera) 0)
+    (= (standby-draw mission.radio) 0))
+  (:goal
+    (and (image-transmitted)
+         (>= (energy mission.battery) 8))))

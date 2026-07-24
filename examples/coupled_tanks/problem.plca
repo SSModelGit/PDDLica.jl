@@ -1,0 +1,13 @@
+(define (problem coupled-tanks-problem)
+  (:domain coupled-tanks)
+  (:components
+    (plant - two-tank-plant))
+  (:init
+    (= (volume plant.supply) 10)
+    (= (pressure plant.supply) 1)
+    (= (mode plant.transfer) closed)
+    (= (rated-flow plant.transfer) 1)
+    (= (volume plant.receiver) 0)
+    (= (pressure plant.receiver) 1))
+  (:goal
+    (>= (volume plant.receiver) 4)))

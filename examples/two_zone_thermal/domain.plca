@@ -1,0 +1,64 @@
+(define (domain two-zone-thermal)
+  (:requirements :typing :numeric-fluents :components :component-hierarchy
+                 :acausal-connectors :processes :continuous-effects)
+
+  (:connector-type heat-port
+    (:potential temperature - number)
+    (:flow heat-flow - number))
+
+  (:component room
+    (:variables
+      (temperature) - number
+      (capacity) - number :static)
+    (:ports
+      (heater) - heat-port :presence required
+      (wall) - heat-port :presence required)
+    (:requirement (= (temperature (heater)) (temperature)))
+    (:requirement (= (temperature (wall)) (temperature)))
+    (:processes
+      (:process heat-balance
+        :parameters ()
+        :precondition true
+        :effect (increase (temperature)
+          (* #t (/ (+ (heat-flow (heater)) (heat-flow (wall))) (capacity)))))))
+
+  (:component heater
+    (:variables
+      (mode) - object
+      (power) - number :static)
+    (:ports
+      (port) - heat-port :presence required)
+    (:requirement (imply (= (mode) off) (= (heat-flow (port)) 0)))
+    (:requirement (imply (= (mode) on) (= (heat-flow (port)) (- (power)))))
+    (:methods
+      (:method turn-on
+        :parameters ()
+        :precondition (= (mode) off)
+        :effect (assign (mode) on))
+      (:method turn-off
+        :parameters ()
+        :precondition (= (mode) on)
+        :effect (assign (mode) off))))
+
+  (:component wall
+    (:variables
+      (conductance) - number :static)
+    (:ports
+      (a) - heat-port :presence required
+      (b) - heat-port :presence required)
+    (:requirement (= (+ (heat-flow (a)) (heat-flow (b))) 0))
+    (:requirement (= (heat-flow (a))
+      (* (conductance) (- (temperature (a)) (temperature (b)))))))
+
+  (:component building
+    (:components
+      (zone-a - room)
+      (zone-b - room)
+      (heater-a - heater)
+      (heater-b - heater)
+      (partition - wall))
+    (:connections
+      (connect (port heater-a) (heater zone-a))
+      (connect (port heater-b) (heater zone-b))
+      (connect (wall zone-a) (a partition))
+      (connect (wall zone-b) (b partition)))))
